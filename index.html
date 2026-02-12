@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jogo da Velha com IA imbatível usando algoritmo Minimax">
+    <meta name="author" content="Seu Nome">
+    <title>Jogo da Velha | IA Imbatível</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>JOGO DA VELHA</h1>
+        <p class="subtitle">[ IA IMBATÍVEL • ALGORITMO MINIMAX ]</p>
+
+        <!-- Scoreboard -->
+        <div class="scoreboard" role="status" aria-live="polite">
+            <div class="score-item player">
+                <div class="score-label">Você (X)</div>
+                <div class="score-value" id="playerScore">0</div>
+            </div>
+            <div class="score-item draws">
+                <div class="score-label">Empates</div>
+                <div class="score-value" id="drawScore">0</div>
+            </div>
+            <div class="score-item ai">
+                <div class="score-label">IA (O)</div>
+                <div class="score-value" id="aiScore">0</div>
+            </div>
+        </div>
+
+        <!-- Game Mode Selector -->
+        <div class="mode-selector" role="group" aria-label="Seleção de modo de jogo">
+            <button class="mode-btn active" data-mode="ai" aria-pressed="true">
+                🤖 Vs IA
+            </button>
+            <button class="mode-btn" data-mode="online" aria-pressed="false">
+                🌐 Multiplayer Online
+            </button>
+        </div>
+
+        <!-- Difficulty selector (only for AI mode) -->
+        <div class="difficulty-selector" id="difficultyContainer" role="group" aria-label="Seleção de dificuldade">
+            <button class="difficulty-btn active" data-level="easy" aria-pressed="true">
+                🎮 Fácil
+            </button>
+            <button class="difficulty-btn medium" data-level="medium" aria-pressed="false">
+                🎯 Médio
+            </button>
+            <button class="difficulty-btn hard" data-level="hard" aria-pressed="false">
+                🔥 Impossível
+            </button>
+        </div>
+
+        <!-- Online Mode Controls -->
+        <div class="online-controls" id="onlineControls" style="display: none;">
+            <div class="username-input-container">
+                <input type="text" id="usernameInput" placeholder="Digite seu nome..." maxlength="20" />
+                <button class="btn" id="findMatchBtn">🔍 Buscar Partida</button>
+            </div>
+            
+            <div class="online-status" id="onlineStatus"></div>
+            
+            <div class="opponent-info" id="opponentInfo" style="display: none;">
+                <span class="opponent-label">Jogando contra:</span>
+                <span class="opponent-name" id="opponentName"></span>
+            </div>
+        </div>
+
+        <!-- Turn indicator -->
+        <div class="turn-indicator" role="status" aria-live="polite">
+            Turno: <span class="current-player" id="turnText">SUA VEZ</span>
+        </div>
+
+        <!-- Game board -->
+        <div class="game-board" role="grid" aria-label="Tabuleiro do jogo">
+            <div class="cell" role="gridcell" tabindex="0" data-index="0" aria-label="Casa 1, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="1" aria-label="Casa 2, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="2" aria-label="Casa 3, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="3" aria-label="Casa 4, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="4" aria-label="Casa 5, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="5" aria-label="Casa 6, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="6" aria-label="Casa 7, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="7" aria-label="Casa 8, vazia"></div>
+            <div class="cell" role="gridcell" tabindex="0" data-index="8" aria-label="Casa 9, vazia"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn" id="resetBtn">🔄 Reiniciar Jogo</button>
+            <button class="btn" id="clearScoreBtn">🗑️ Zerar Placar</button>
+        </div>
+
+        <!-- History -->
+        <div class="history">
+            <h3>📜 Histórico de Jogadas</h3>
+            <div class="history-controls">
+                <button class="history-btn" id="undoBtn" disabled>⬅️ Desfazer</button>
+                <span class="history-info" id="historyInfo">Jogada 0/0</span>
+                <button class="history-btn" id="redoBtn" disabled>➡️ Refazer</button>
+            </div>
+        </div>
+
+        <!-- Chat (only visible in online mode) -->
+        <div class="chat-container" id="chatContainer" style="display: none;">
+            <h3>💬 Chat</h3>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Digite uma mensagem..." maxlength="200" />
+                <button class="btn-chat" id="sendChatBtn">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="gameModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <h2 id="modalTitle">VITÓRIA!</h2>
+            <p id="modalMessage">Você venceu!</p>
+            <button class="btn" id="modalBtn">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Multiplayer Module -->
+    <script src="multiplayer.js"></script>
+    
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
